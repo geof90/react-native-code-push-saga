@@ -78,7 +78,7 @@ export default function* codePushSaga(options = {}) {
   
   // If we're supposed to sync on app start,
   // then run an initial sync before kicking
-  // off the "event loops".
+  // off the "event loop".
   if (options.syncOnStart) {
     yield call(sync, options.syncOptions);
   }
