@@ -1,0 +1,16 @@
+{
+  "name": "react-native-code-push-saga",
+  "version": "1.0.0",
+  "description": "Redux saga that handles synchronizing a React Native app with the CodePush service",
+  "main": "index.js",
+  "keywords": [
+    "react-native",
+    "redux",
+    "redux-react",
+    "redux-saga",
+    "code",
+    "push"
+  ],
+  "author": "Jonathan Carter",
+  "license": "MIT"
+}

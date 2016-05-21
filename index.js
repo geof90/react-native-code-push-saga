@@ -1,0 +1,98 @@
+import { AppState, AsyncStorage } from "react-native";
+import { sync } from "react-native-code-push";
+
+import { eventChannel, delay } from "redux-saga"
+import { call, race, take } from "redux-saga/effects"
+
+/**
+ * Constructs a Saga channel that allows subscribers
+ * to be notified whenever the app is resumed.
+ * 
+ * @param Name of the action to dispatch on resume.
+ */
+function resumeChannel(syncActionName) {
+  return eventChannel(listener => {
+      AppState.addEventListener("change", (newState) => {
+        newState === "active" && listener(syncActionName);
+      });
+  });
+}
+
+/**
+ * Delays calling sync until the app is ready for it. This allows
+ * apps to "throttle" calling sync until after an initial onboarding
+ * experience, so that end-users are interrupted too soon.
+ * 
+ * @param delayByInterval Number of seconds to delay calling sync
+ * @param delayByAction Name of a Redux action to wait for being dispatched before calling sync.
+ */
+function* delaySync(delayByInterval, delayByAction) {
+  const codePushSagaKey = "CODE_PUSH_SAGA_KEY";
+  const key = yield call(AsyncStorage.getItem, codePushSagaKey);
+    
+  if (!key) {
+    yield call(AsyncStorage.setItem, codePushSagaKey, "VALUE");
+    
+    let delayEvents = {
+      interval: call(delay, delayByInterval * 1000)
+    };
+    
+    if (delayByAction) {
+      delayEvents.action = take(delayByAction);
+    }
+
+    yield race(delayEvents);
+  }
+}
+
+/**
+ * Redux Saga that handles synchronizing a React Native
+ * app with the CodePush server at configurable events. 
+ * 
+ * @param options Options to configure when to call sync.
+ */
+export default function* codePushSaga(options = {}) {
+  options = {
+    syncActionName: "SYNC",
+    syncOnResume: true,
+    syncOnInterval: 0,
+    syncOnStart: true,
+    
+    delayByInterval: 0,
+    delayByAction: null,
+    
+    syncOptions: null,
+    
+    ...options  
+  };
+  
+  // Check whether we need to delay the first
+  // call to sync, and if so, then perform the delay.
+  if (options.delayByInterval > 0 || options.delayByAction) {
+    yield call(delaySync, options.delayByInterval, options.delayByAction);
+  }
+  
+  // If we're supposed to sync on app start,
+  // then run an initial sync before kicking
+  // off the "event loops".
+  if (options.syncOnStart) {
+    yield call(sync, options.syncOptions);
+  }
+ 
+  let syncEvents = {
+    request: take(options.syncActionName)
+  };
+  
+  if (options.syncOnResume) {
+    const chan = yield call(resumeChannel, options.syncActionName);
+    syncEvents.resume = take(chan);
+  }
+
+  if (options.syncOnInterval > 0) {
+    syncEvents.interval = call(delay, options.syncOnInterval * 1000);
+  }
+  
+  while (yield race(syncEvents)) {
+    yield call(sync, options.syncOptions);
+  }
+}
