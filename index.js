@@ -1,11 +1,14 @@
 import { AppState, AsyncStorage } from "react-native";
 import { sync } from "react-native-code-push";
 
-import { eventChannel, delay } from "redux-saga"
+import { delay, eventChannel } from "redux-saga"
 import { call, race, take } from "redux-saga/effects"
 
+const codePushDelayKey = "codePush@@delayKey";
+const codePushDelayValue = "codePush";
+  
 /**
- * Constructs a Saga channel that allows subscribers
+ * Constructs a saga channel that allows subscribers
  * to be notified whenever the app is resumed.
  * 
  * @param Name of the action to dispatch on resume.
@@ -20,23 +23,24 @@ function resumeChannel(syncActionName) {
 
 /**
  * Delays calling sync until the app is ready for it. This allows
- * apps to "throttle" calling sync until after an initial onboarding
- * experience, so that end-users are interrupted too soon.
+ * apps to "throttle" calling sync until after an initial grace/onboarding
+ * period, so that end-users are interrupted too soon.
  * 
  * @param delayByInterval Number of seconds to delay calling sync
  * @param delayByAction Name of a Redux action to wait for being dispatched before calling sync.
  */
 function* delaySync(delayByInterval, delayByAction) {
-  const codePushSagaKey = "CODE_PUSH_SAGA_KEY";
-  const key = yield call(AsyncStorage.getItem, codePushSagaKey);
+  const key = yield call(AsyncStorage.getItem, codePushDelayKey);
     
-  if (!key) {
-    yield call(AsyncStorage.setItem, codePushSagaKey, "VALUE");
+  if (!key || key !== codePushDelayValue) {
+    yield call(AsyncStorage.setItem, codePushDelayKey, codePushDelayValue);
     
     let delayEvents = {
       interval: call(delay, delayByInterval * 1000)
     };
     
+    // If the consumer specified an action to cancel the delay
+    // period, then add the take effect to the race conditions.
     if (delayByAction) {
       delayEvents.action = take(delayByAction);
     }
@@ -83,6 +87,9 @@ export default function* codePushSaga(options = {}) {
     request: take(options.syncActionName)
   };
   
+  // If the caller requested sync to be triggered
+  // on app resume, then create the event channel
+  // and add it to our race conditions.
   if (options.syncOnResume) {
     const chan = yield call(resumeChannel, options.syncActionName);
     syncEvents.resume = take(chan);
@@ -92,6 +99,8 @@ export default function* codePushSaga(options = {}) {
     syncEvents.interval = call(delay, options.syncOnInterval * 1000);
   }
   
+  // Kick off the "event loop" that will continue
+  // to watch for any of the requested sync points.  
   while (yield race(syncEvents)) {
     yield call(sync, options.syncOptions);
   }
