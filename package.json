@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Redux saga that handles synchronizing a React Native app with the CodePush service",
   "main": "index.js",
+  "homepage": "https://microsoft.github.io/code-push",
   "keywords": [
     "react-native",
     "redux",
@@ -12,5 +13,9 @@
     "push"
   ],
   "author": "Jonathan Carter",
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lostintangent/react-native-code-push-saga"
+  },
 }
