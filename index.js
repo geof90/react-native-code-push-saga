@@ -12,9 +12,13 @@ import { call, race, take } from "redux-saga/effects"
  */
 function resumeChannel(syncActionName) {
   return eventChannel(listener => {
-      AppState.addEventListener("change", (newState) => {
-        newState === "active" && listener(syncActionName);
-      });
+    const onAppStateChange = (newState) => {
+      newState === "active" && listener(syncActionName);
+    }
+
+    AppState.addEventListener("change", onAppStateChange);
+
+    return () => AppState.removeEventListener("change", onAppStateChange);
   });
 }
 
