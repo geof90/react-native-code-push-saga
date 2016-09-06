@@ -57,4 +57,13 @@ yield spawn(codePushSaga, {
 yield spawn(codePushSaga, {
    syncActionName: "NAVIGATE_HOME" 
 });
+
+// Invoke a callback every time the sync status changes
+// or show a status bar as the download progresses.
+// You can find a list of status types at
+// https://github.com/Microsoft/react-native-code-push#syncstatus.
+yield spawn(codePushSaga, {
+   statusDidChangeCallback: this.onSyncStatusChange,
+   downloadDidProgressCallback: this.onSyncDownloadProgress,
+});
 ```
