@@ -63,7 +63,7 @@ yield spawn(codePushSaga, {
 // You can find a list of status types at
 // https://github.com/Microsoft/react-native-code-push#syncstatus.
 yield spawn(codePushSaga, {
-   statusDidChangeCallback: this.onSyncStatusChange,
-   downloadDidProgressCallback: this.onSyncDownloadProgress,
+   codePushStatusDidChange: this.codePushStatusDidChange,
+   codePushDownloadDidProgress: this.codePushDownloadDidProgress,
 });
 ```

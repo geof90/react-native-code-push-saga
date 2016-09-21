@@ -81,7 +81,7 @@ export default function* codePushSaga(options = {}) {
   // off the "event loop".
   if (options.syncOnStart) {
     try {
-      yield call(sync, options.syncOptions, options.statusDidChangeCallback, options.downloadDidProgressCallback);
+      yield call(sync, options.syncOptions, options.codePushStatusDidChange, options.codePushDownloadDidProgress);
     } catch (e) {
       console.log(e);
     }
@@ -107,7 +107,7 @@ export default function* codePushSaga(options = {}) {
   // to watch for any of the requested sync points.
   while (yield race(syncEvents)) {
     try {
-      yield call(sync, options.syncOptions, options.statusDidChangeCallback, options.downloadDidProgressCallback);
+      yield call(sync, options.syncOptions, options.codePushStatusDidChange, options.codePushDownloadDidProgress);
     } catch (e) {
       console.log(e);
     }
