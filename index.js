@@ -1,39 +1,41 @@
 import { AppState, AsyncStorage } from "react-native";
 import { sync } from "react-native-code-push";
 
-import { delay, eventChannel } from "redux-saga"
+import { eventChannel, delay } from "redux-saga"
 import { call, race, take } from "redux-saga/effects"
 
-const codePushDelayKey = "codePush@@delayKey";
-const codePushDelayValue = "codePush";
-
 /**
- * Constructs a saga channel that allows subscribers
+ * Constructs a Saga channel that allows subscribers
  * to be notified whenever the app is resumed.
  *
  * @param Name of the action to dispatch on resume.
  */
 function resumeChannel(syncActionName) {
   return eventChannel(listener => {
-      AppState.addEventListener("change", (newState) => {
-        newState === "active" && listener(syncActionName);
-      });
+    const onAppStateChange = (newState) => {
+      newState === "active" && listener(syncActionName);
+    }
+
+    AppState.addEventListener("change", onAppStateChange);
+
+    return () => AppState.removeEventListener("change", onAppStateChange);
   });
 }
 
 /**
  * Delays calling sync until the app is ready for it. This allows
- * apps to "throttle" calling sync until after an initial grace/onboarding
- * period, so that end-users are interrupted too soon.
+ * apps to "throttle" calling sync until after an initial onboarding time period,
+ * so that end-users are interrupted too soon.
  *
  * @param delayByInterval Number of seconds to delay calling sync
  * @param delayByAction Name of a Redux action to wait for being dispatched before calling sync.
  */
 function* delaySync(delayByInterval, delayByAction) {
+  const codePushDelayKey = "CODE_PUSH_DELAY_KEY";
   const key = yield call(AsyncStorage.getItem, codePushDelayKey);
 
-  if (!key || key !== codePushDelayValue) {
-    yield call(AsyncStorage.setItem, codePushDelayKey, codePushDelayValue);
+  if (!key) {
+    yield call(AsyncStorage.setItem, codePushDelayKey, "VALUE");
 
     let delayEvents = {
       interval: call(delay, delayByInterval * 1000)
