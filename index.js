@@ -80,7 +80,11 @@ export default function* codePushSaga(options = {}) {
   // then run an initial sync before kicking
   // off the "event loops".
   if (options.syncOnStart) {
-    yield call(sync, options.syncOptions);
+    try {
+      yield call(sync, options.syncOptions, options.codePushStatusDidChange, options.codePushDownloadDidProgress);
+    } catch (e) {
+      console.log(e);
+    }
   }
 
   let syncEvents = {
@@ -97,6 +101,10 @@ export default function* codePushSaga(options = {}) {
   }
 
   while (yield race(syncEvents)) {
-    yield call(sync, options.syncOptions);
+    try {
+      yield call(sync, options.syncOptions, options.codePushStatusDidChange, options.codePushDownloadDidProgress);
+    } catch (e) {
+      console.log(e);
+    }
   }
 }
