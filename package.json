@@ -1,6 +1,6 @@
 {
   "name": "react-native-code-push-saga",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Redux saga that handles synchronizing a React Native app with the CodePush service",
   "main": "index.js",
   "homepage": "https://microsoft.github.io/code-push",
