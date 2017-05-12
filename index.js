@@ -111,7 +111,11 @@ export default function* codePushSaga(options = {}) {
     try {
       yield call(sync, options.syncOptions, options.codePushStatusDidChange, options.codePushDownloadDidProgress);
     } catch (e) {
-      console.log(e);
+      if(options.onSyncError && typeof options.onSyncError === 'function'){
+        options.onSyncError(e)
+      }else{
+        console.log(e);
+      }
     }
   }
 }
